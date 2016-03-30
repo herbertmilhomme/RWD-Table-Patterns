@@ -30,8 +30,10 @@
         //good to have - for easy access
         this.$thead = this.$table.find('thead');
         this.$tbody = this.$table.find('tbody');
+        this.$tfooter = this.$table.find('tfooter');
         this.$hdrCells = this.$thead.find('th');
         this.$bodyRows = this.$tbody.find('tr');
+        this.$footerRows = this.$tfooter.find('th');
 
         //toolbar and buttons
         this.$btnToolbar = null; //defined farther down
@@ -486,6 +488,69 @@
 
         // for each body rows
         that.$bodyRows.each(function(){
+            var idStart = 0;
+
+            // for each cell
+            $(this).find('th, td').each(function(){
+                var $cell = $(this);
+                var columnsAttr = '';
+
+                var colSpan = $cell.prop('colSpan');
+
+                var numOfHidden = 0;
+                // loop through columns that the cell spans over
+                for (var k = idStart; k < (idStart + colSpan); k++) {
+                    // add column id
+                    columnsAttr = columnsAttr + ' ' + that.idPrefix + k;
+
+                    // get column header
+                    var $colHdr = that.$tableScrollWrapper.find('#' + that.idPrefix + k);
+
+                    // copy data-priority attribute from column header
+                    var dataPriority = $colHdr.attr('data-priority');
+                    if (dataPriority) { $cell.attr('data-priority', dataPriority); }
+
+                    if($colHdr.css('display')==='none'){
+                        numOfHidden++;
+                    }
+
+                }
+
+                // if colSpan is more than 1
+                if(colSpan > 1) {
+                    //give it the class 'spn-cell';
+                    $cell.addClass('spn-cell');
+
+                    // if one of the columns that the cell belongs to is visible then show the cell
+                    if(numOfHidden !== colSpan){
+                        $cell.show();
+                    } else {
+                        $cell.hide(); //just in case
+                    }
+                }
+
+                //update colSpan to match number of visible columns that i belongs to
+                $cell.prop('colSpan',Math.max((colSpan - numOfHidden),1));
+
+                //remove whitespace in begining of string.
+                columnsAttr = columnsAttr.substring(1);
+
+                //set attribute to cell
+                $cell.attr('data-columns', columnsAttr);
+
+                //increment idStart with the current cells colSpan.
+                idStart = idStart + colSpan;
+            });
+        });
+    };
+    
+    // Setup footer cells
+    // assign matching "data-columns" attributes to the associated cells "(cells with colspan>1 has multiple columns).
+    ResponsiveTable.prototype.setupStandardCells = function() {
+        var that = this;
+
+        // for each body rows
+        that.$footerRows.each(function(){
             var idStart = 0;
 
             // for each cell
